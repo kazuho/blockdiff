@@ -18,6 +18,6 @@ TAKE INCREMENTAL BACKUPS
 RESTORE
 
 @server# for i in lv_name.*.gz; do
->   gzip $i | blockdiff_merge /dev/..lv_name
+>   gunzip < $i | blockdiff_merge /dev/..lv_name
 > done
 

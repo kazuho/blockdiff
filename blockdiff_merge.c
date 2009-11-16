@@ -4,16 +4,13 @@
 #include <unistd.h>
 #include <openssl/crypto.h>
 
-#define BLOCK_SIZE (16384)
-
-
 /* read patch data from STDIN and apply to argv[0] */
 
 int main(int argc, char **argv)
 {
   int fd;
-  unsigned char block[BLOCK_SIZE];
-  size_t block_size;
+  unsigned char* block;
+  size_t blocksize, rlen;
   long long offset;
   
   if (argc != 2) {
@@ -26,8 +23,18 @@ int main(int argc, char **argv)
     exit(1);
   }
   
+  if (fread(&blocksize, sizeof(blocksize), 1, stdin) != 1) {
+    perror("unexpected eof");
+    exit(2);
+  }
+  
+  if ((block = malloc(blocksize)) == NULL) {
+    perror("no memory");
+    exit(2);
+  }
+  
   while (fread(&offset, 1, sizeof(offset), stdin) == sizeof(offset)) {
-    if ((block_size = fread(block, 1, sizeof(block), stdin)) <= 0) {
+    if ((rlen = fread(block, 1, blocksize, stdin)) <= 0) {
       perror("unexpected eof");
       exit(2);
     }
@@ -35,7 +42,7 @@ int main(int argc, char **argv)
       perror("seek failed");
       exit(3);
     }
-    if (write(fd, block, block_size) != block_size) {
+    if (write(fd, block, rlen) != rlen) {
       perror("write failed");
       exit(3);
     }

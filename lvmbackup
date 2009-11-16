@@ -1,0 +1,47 @@
+#! /bin/sh
+
+export BLOCKSIZE=1048576
+
+DATA_DIR="/var/lvmbackup"
+
+SS_NAME="lvmbackup_ss"
+SS_SIZE="20G"
+
+LV_PATH="$1"
+LV_NAME=`basename "$LV_PATH"`
+OUT_DIGEST_NAME="$2"
+IN_DIGEST_NAME="$3"
+if [ ! -e "$LV_PATH" -o -z "$OUT_DIGEST_NAME" ] ; then
+    echo "Usage: $0 <volume or file> <out-version> [<in-version>]" >&2
+    exit 1
+fi
+if [ "$IN_DIGEST_NAME" -a ! -e "$DATA_DIR/$LV_NAME/$IN_DIGEST_NAME.md5" ] ; then
+    echo "no backup data for version:$IN_DIGEST_NAME" >&2
+    exit 1
+fi
+
+# create backup dir
+mkdir -p "$DATA_DIR" || exit 2
+
+# create snapshot
+echo "creating snapshot..." >&2
+lvcreate --snapshot -L "$SS_SIZE" -n "$SS_NAME" "$LV_PATH" >&2 || exit 2
+
+SS_PATH=`dirname "$LV_PATH"`/"$SS_NAME"
+
+# backup
+echo "reading snapshot $SS_PATH ..." >&2
+mkdir -p "$DATA_DIR/$LV_NAME" || exit 2
+if [ -z "$IN_DIGEST_NAME" ] ; then
+    blockdiff_dump < "$SS_PATH" 6> "$DATA_DIR/$LV_NAME/$OUT_DIGEST_NAME.md5"
+    RET="$?"
+else
+    blockdiff_dump < "$SS_PATH" 5< "$DATA_DIR/$LV_NAME/$IN_DIGEST_NAME.md5" 6> "$DATA_DIR/$LV_NAME/$OUT_DIGEST_NAME.md5"
+    RET="$?"
+fi
+
+# remove snapshot
+echo "removing stapshot $SS_PATH ..." >&2
+lvremove -f "$SS_PATH" >&2 || exit 4
+
+exit $?

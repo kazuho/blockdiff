@@ -1,3 +1,5 @@
+BLOCKDIFF - a differential backup tool for block devices and files
+
 COMPILE
 
 @server# gcc -Wall -g -o blockdiff_dump blockdiff_dump.c -lcrypto

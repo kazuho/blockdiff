@@ -1,25 +1,40 @@
 BLOCKDIFF - a differential backup tool for block devices and files
 
+
 COMPILE
 
-@server# gcc -Wall -g -o blockdiff_dump blockdiff_dump.c -lcrypto
-@server# gcc -Wall -g -o blockdiff_merge blockdiff_merge.c
+# gcc -Wall -g -o blockdiff_dump blockdiff_dump.c -lcrypto
+# gcc -Wall -g -o blockdiff_merge blockdiff_merge.c
+
 
 FULL BACKUP
 
-@client# ssh root@server lvmbackup /dev/.../lv_name 1 | gzip > lv_name.1.gz
+# blockdiff_dump < file_to_backup 6> backup.md5 | gzip > backup.img
+
 
 INCREMENTAL BACKUPS
 
-@client# ssh root@server lvmbackup /dev/.../lv_name 2 1 | gzip > lv_name.2.gz
+# blockdiff_dump < file_to_backup 5< backup.md5 6> backup.2.md5 | gzip > backup.2.img
+# blockdiff_dump < file_to_backup 5< backup.2.md5 6> backup.3.md5 | gzip > backup.3.img
+...
 
-@client# ssh root@server lvmbackup /dev/.../lv_name 3 2 | gzip > lv_name.3.gz
 
-@client# ssh root@server lvmbackup /dev/.../lv_name 4 3 | gzip > lv_name.4.gz
+REMOTE BACKUP
+
+# ssh_blockdiff_dump -z root@host file_to_backup 6> backup.md5 > backup.img.gz
+# ssh_blockdiff_dump -z root@host file_to_backup 5< backup.md5 6> backup.2.md5 > backup.2.img.gz
+# ssh_blockdiff_dump -z root@host file_to_backup 5< backup.2.md5 6> backup.3.md5 > backup.3.img.gz
+...
+
+REMOTE LVM BACKUP
+
+# ssh_lvm_dump -z root@host volume_path 6> backup.md5 > backup.img.gz
+# ssh_lvm_dump -z root@host volume_path 5< backup.md5 6> backup.2.md5 > backup.2.img.gz
+# ssh_lvm_dump -z root@host volume_path 5< backup.2.md5 6> backup.3.md5 > backup.3.img.gz
+
 
 RESTORE
 
-@server# for i in lv_name.*.gz; do
->   gunzip < $i | blockdiff_merge /dev/..lv_name
+@server# for i in `ls backup.*.img`; do
+>   blockdiff_merge /dev/..lv_name < $i
 > done
-

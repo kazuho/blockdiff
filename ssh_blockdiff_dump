@@ -3,9 +3,12 @@
 # check args
 SSH_ARGS="$1"
 REMOTE_FILE="$2"
-OLD_DIGEST_FILE="$3"
 if [ ! "$REMOTE_FILE" ] ; then
-    echo "Usage: $0 user@host remote_file [old_digest]" >&2
+    echo "Usage: $0 user@host remote_file [5< prev_digest_file] 6> digest_file > backup_file" >&2
+    exit 1
+fi
+if [ ! -e "/dev/fd/6" ] ; then
+    echo "file descriptor 6 (digest output) not open" >&2
     exit 1
 fi
 
@@ -27,17 +30,17 @@ if [ ! "$REMOTE_TMPDIR" ] ; then
 fi
 
 # copy digest file to remote
-if [ "$OLD_DIGEST_FILE" ] ; then
+if [ -e "/dev/fd/5" ] ; then
     CMD="cat > $REMOTE_TMPDIR/in_md5.$$"
     if [ "$VERBOSE" ] ; then
 	echo "issuing $CMD" >&2
     fi
-    ssh $SSH_ARGS "$CMD" < $OLD_DIGEST_FILE || exit $?
+    ssh $SSH_ARGS "$CMD" <&5 || exit $?
 fi
 
 # build and execute blockdiff_dump
 CMD="$DUMP_CMD < \"$REMOTE_FILE\" 6> $REMOTE_TMPDIR/out_md5.$$"
-if [ "$OLD_DIGEST_FILE" ] ; then
+if [ -e "/dev/fd/5" ] ; then
     CMD="$CMD 5< $REMOTE_TMPDIR/in_md5.$$"
 fi
 if [ "$BLOCKSIZE" ] ; then
@@ -57,7 +60,7 @@ fi
 
 # remove temporary files
 ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/out_md5.$$"
-if [ "$OLD_DIEST_FILE" ] ; then
+if [ -e "/dev/fd/5" ] ; then
     ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/in_md5.$$"
 fi
 

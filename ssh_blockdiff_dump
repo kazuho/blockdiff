@@ -1,0 +1,64 @@
+#! /bin/sh
+
+# check args
+SSH_ARGS="$1"
+REMOTE_FILE="$2"
+OLD_DIGEST_FILE="$3"
+if [ ! "$REMOTE_FILE" ] ; then
+    echo "Usage: $0 user@host remote_file [old_digest]" >&2
+    exit 1
+fi
+
+# setup variables
+if [ ! "$TMPDIR" ] ; then
+    TMPDIR="/tmp"
+fi
+if [ ! "$DUMP_CMD" ] ;then
+    DUMP_CMD="blockdiff_dump"
+fi
+EXIT_CODE=0
+
+# obtain remote TMPDIR
+ssh $SSH_ARGS "echo \$TMPDIR" > $TMPDIR/tmpdir.$$ || exit $?
+REMOTE_TMPDIR=`cat $TMPDIR/tmpdir.$$`
+rm -f $TMPDIR/tmpdir.$$
+if [ ! "$REMOTE_TMPDIR" ] ; then
+    REMOTE_TMPDIR="/tmp"
+fi
+
+# copy digest file to remote
+if [ "$OLD_DIGEST_FILE" ] ; then
+    CMD="cat > $REMOTE_TMPDIR/in_md5.$$"
+    if [ "$VERBOSE" ] ; then
+	echo "issuing $CMD" >&2
+    fi
+    ssh $SSH_ARGS "$CMD" < $OLD_DIGEST_FILE || exit $?
+fi
+
+# build and execute blockdiff_dump
+CMD="$DUMP_CMD < \"$REMOTE_FILE\" 6> $REMOTE_TMPDIR/out_md5.$$"
+if [ "$OLD_DIGEST_FILE" ] ; then
+    CMD="$CMD 5< $REMOTE_TMPDIR/in_md5.$$"
+fi
+if [ "$BLOCKSIZE" ] ; then
+    CMD="BLOCKSIZE=$BLOCKSIZE $CMD"
+fi
+if [ "$VERBOSE" ] ; then
+    echo "issuing $CMD" >&2
+fi    
+ssh $SSH_ARGS $CMD
+EXIT_CODE=$?
+
+# transfer md5
+if [ "$EXIT_CODE" -eq 0 ] ; then
+    ssh $SSH_ARGS "cat $REMOTE_TMPDIR/out_md5.$$" >&6
+    EXIT_CODE=$?
+fi
+
+# remove temporary files
+ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/out_md5.$$"
+if [ "$OLD_DIEST_FILE" ] ; then
+    ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/in_md5.$$"
+fi
+
+exit $EXIT_CODE

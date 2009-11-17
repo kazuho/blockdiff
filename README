@@ -19,14 +19,31 @@ INCREMENTAL BACKUPS
 ...
 
 
-REMOTE BACKUP
+REMOTE BACKUP (HIGH LEVEL, INCREMENTAL)
+
+# blockdiff_backup backup-name ssh_blockdiff_dump -z root@host file_to_backup
+# blockdiff_backup backup-name ssh_blockdiff_dump -z root@host file_to_backup
+# blockdiff_backup backup-name ssh_blockdiff_dump -z root@host file_to_backup
+...
+
+
+REMOTE BACKUP (LOW ELVEL)
 
 # ssh_blockdiff_dump -z root@host file_to_backup 6> backup.md5 > backup.img.gz
 # ssh_blockdiff_dump -z root@host file_to_backup 5< backup.md5 6> backup.2.md5 > backup.2.img.gz
 # ssh_blockdiff_dump -z root@host file_to_backup 5< backup.2.md5 6> backup.3.md5 > backup.3.img.gz
 ...
 
-REMOTE LVM BACKUP
+
+REMOTE LVM BACKUP (HIGH LEVEL, INCREMENTAL)
+
+# blockdiff_backup backup-name ssh_lvm_dump -z root@host
+# blockdiff_backup backup-name ssh_lvm_dump -z root@host
+# blockdiff_backup backup-name ssh_lvm_dump -z root@host
+...
+
+
+REMOTE LVM BACKUP (LOW LEVEL)
 
 # ssh_lvm_dump -z root@host volume_path 6> backup.md5 > backup.img.gz
 # ssh_lvm_dump -z root@host volume_path 5< backup.md5 6> backup.2.md5 > backup.2.img.gz
@@ -35,6 +52,6 @@ REMOTE LVM BACKUP
 
 RESTORE
 
-@server# for i in `ls backup.*.img`; do
+@server# for i in `ls backup.*`; do
 >   blockdiff_merge /dev/..lv_name < $i
 > done

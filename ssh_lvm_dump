@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# usage: ssh_lvm_dump root@host lv_path
+
+export BLOCKSIZE=1048576
+SS_NAME="lvm_dump"
+
+# check args
+SSH_ARGS="$1"
+LV_PATH="$2"
+if [ ! "$LV_PATH" ] ; then
+    echo "Usage: $0 root@host lv_path [5< prev_digest_file] 6> digest_file > backup_file" >&2
+    exit 1
+fi
+
+# setup variables
+SS_PATH=`dirname $LV_PATH`"/$SS_NAME"
+SSH_BLOCKDIFF_DUMP=`dirname $0`
+if [ "$SSH_BLOCKDIFF_DUMP" ] ; then
+    SSH_BLOCKDIFF_DUMP="$SSH_BLOCKDIFF_DUMP/"
+fi
+SSH_BLOCKDIFF_DUMP="$SSH_BLOCKDIFF_DUMPssh_blockdiff_dump"
+if [ ! "$SNAPSHOT_SIZE" ] ; then
+    SNAPSHOT_SIZE="10G"
+fi
+EXIT_CODE=0
+
+# create snapshot
+if [ "$EXIT_CODE" -eq 0 ] ; then
+    echo "creating snapshot..." >&2
+    ssh $SSH_ARGS "lvcreate --snapshot -L \"$SNAPSHOT_SIZE\" -n \"$SS_NAME\" \"$LV_PATH\"" >&2
+    EXIT_CODE=$?
+fi
+
+# dump
+if [ "$EXIT_CODE" -eq 0 ] ; then
+    $SSH_BLOCKDIFF_DUMP "$SSH_ARGS" "$SS_PATH"
+    EXIT_CODE=$?
+fi
+
+# remove snapshot
+echo "removing snapshot $SS_PATH..." >&2
+ssh $SSH_ARGS "lvremove -f \"$SS_PATH\"" >&2
+EXIT_CODE2=$?
+if [ "$EXIT_CODE" -eq 0 ] ; then
+    EXIT_CODE=$EXIT_CODE2
+fi
+
+exit $EXIT_CODE

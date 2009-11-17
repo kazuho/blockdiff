@@ -1,10 +1,14 @@
 #! /bin/sh
 
 # check args
+if [ "$1" = "-z" ] ; then
+    USE_GZIP=1
+    shift
+fi
 SSH_ARGS="$1"
 REMOTE_FILE="$2"
 if [ ! "$REMOTE_FILE" ] ; then
-    echo "Usage: $0 user@host remote_file [5< prev_digest_file] 6> digest_file > backup_file" >&2
+    echo "Usage: $0 [-z] user@host remote_file [5< prev_digest_file] 6> digest_file > backup_file" >&2
     exit 1
 fi
 if [ ! -e "/dev/fd/6" ] ; then
@@ -46,10 +50,13 @@ fi
 if [ "$BLOCKSIZE" ] ; then
     CMD="BLOCKSIZE=$BLOCKSIZE $CMD"
 fi
+if [ "$USE_GZIP" ] ; then
+    CMD="$CMD | gzip ; exit \`test \"\${PIPESTATUS[0]}\" -eq 0 -a \"\$?\" -eq 0\`"
+fi
 if [ "$VERBOSE" ] ; then
     echo "issuing $CMD" >&2
 fi    
-ssh $SSH_ARGS $CMD
+ssh $SSH_ARGS "$CMD"
 EXIT_CODE=$?
 
 # transfer md5

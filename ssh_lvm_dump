@@ -1,11 +1,13 @@
 #! /bin/sh
 
-# usage: ssh_lvm_dump root@host lv_path
-
 export BLOCKSIZE=1048576
 SS_NAME="lvm_dump"
 
 # check args
+if [ "$1" = "-z" ] ; then
+    SSH_BLOCKDIFF_ARGS="-z"
+    shift
+fi
 SSH_ARGS="$1"
 LV_PATH="$2"
 if [ ! "$LV_PATH" ] ; then
@@ -14,12 +16,15 @@ if [ ! "$LV_PATH" ] ; then
 fi
 
 # setup variables
-SS_PATH=`dirname $LV_PATH`"/$SS_NAME"
+SS_PATH="`dirname $LV_PATH`/$SS_NAME"
 SSH_BLOCKDIFF_DUMP=`dirname $0`
 if [ "$SSH_BLOCKDIFF_DUMP" ] ; then
     SSH_BLOCKDIFF_DUMP="$SSH_BLOCKDIFF_DUMP/"
 fi
 SSH_BLOCKDIFF_DUMP="$SSH_BLOCKDIFF_DUMPssh_blockdiff_dump"
+if [ "$SSH_BLOCKDIFF_ARGS" ] ; then
+    SSH_BLOCKDIFF_DUMP="$SSH_BLOCKDIFF_DUMP $SSH_BLOCKDIFF_ARGS"
+fi
 if [ ! "$SNAPSHOT_SIZE" ] ; then
     SNAPSHOT_SIZE="10G"
 fi
@@ -34,6 +39,7 @@ fi
 
 # dump
 if [ "$EXIT_CODE" -eq 0 ] ; then
+    echo "running: $SSH_BLOCKDIFF_DUMP \"$SSH_ARGS\" \"$SS_PATH\"..." >&2
     $SSH_BLOCKDIFF_DUMP "$SSH_ARGS" "$SS_PATH"
     EXIT_CODE=$?
 fi

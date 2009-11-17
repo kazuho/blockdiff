@@ -1,7 +1,9 @@
 #! /bin/sh
 
-export BLOCKSIZE=1048576
 SS_NAME="lvm_dump"
+if [ ! "$BLOCKSIZE" ] ; then
+    export BLOCKSIZE=1048576
+fi
 
 # check args
 if [ "$1" = "-z" ] ; then

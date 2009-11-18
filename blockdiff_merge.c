@@ -1,6 +1,8 @@
+#define _LARGEFILE64_SOURCE
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <openssl/crypto.h>
 
@@ -13,6 +15,7 @@ int main(int argc, char **argv)
   int blocksize;
   size_t rlen;
   long long offset;
+  int debug = getenv("DEBUG") != NULL;
   
   if (argc != 2) {
     fprintf(stderr, "Usage: %s <file>\n", argv[0]);
@@ -39,7 +42,9 @@ int main(int argc, char **argv)
       perror("unexpected eof");
       exit(2);
     }
-    if (lseek(fd, offset, SEEK_SET) == -1) {
+    if (debug)
+      fprintf(stderr, "writing at:%lld\n", offset);
+    if (lseek64(fd, offset, SEEK_SET) == -1) {
       perror("seek failed");
       exit(3);
     }

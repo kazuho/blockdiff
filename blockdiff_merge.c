@@ -10,7 +10,8 @@ int main(int argc, char **argv)
 {
   int fd;
   unsigned char* block;
-  size_t blocksize, rlen;
+  int blocksize;
+  size_t rlen;
   long long offset;
   
   if (argc != 2) {

@@ -20,7 +20,8 @@ int main(int argc, char** argv)
   unsigned char* block;
   unsigned char digest[MD5_DIGEST_LENGTH], orig_digest[MD5_DIGEST_LENGTH];
   char* blocksize_s;
-  size_t blocksize = DEFAULT_BLOCKSIZE, rlen;
+  int blocksize = DEFAULT_BLOCKSIZE;
+  size_t rlen;
   long long offset;
   
   if ((blocksize_s = getenv(BLOCKSIZE_ENV)) != NULL) {

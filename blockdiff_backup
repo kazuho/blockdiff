@@ -1,0 +1,66 @@
+#! /bin/sh
+
+# usage: $0 backup_name ssh_lvm_dump -z volume_path
+
+# check args
+BACKUP_NAME="$1"
+shift
+if [ "$#" -eq "0" ] ; then
+    echo "Usage: $0 backup_name backup_cmd cmd_args..." >&2
+    exit 1
+fi
+BACKUP_CMD="\"$1\""
+shift
+while [ "$#" -ne "0" ] ; do
+    if [ "$1" = "-z" ] ; then
+	# nasty way to detect gzip usage
+	USE_GZIP=1
+    fi
+    BACKUP_CMD="$BACKUP_CMD \"$1\""
+    shift
+done
+
+# get backup version
+NEXT_VER=1
+if [ -e "$BACKUP_NAME.ver" ] ; then
+    LAST_VER=`cat "$BACKUP_NAME.ver"`
+    EXIT_CODE=$?
+    if [ "$EXIT_CODE" -ne "0" ] ; then
+	exit $EXIT_CODE
+    fi
+    NEXT_VER=`expr $LAST_VER + 1` 
+    EXIT_CODE=$?
+    if [ "$EXIT_CODE" -ne "0" ] ; then
+	exit $EXIT_CODE
+    fi
+fi
+if [ "$USE_GZIP" ] ; then
+    BACKUP_FILE="$BACKUP_NAME.$NEXT_VER.gz"
+else
+    BACKUP_FILE="$BACKUP_NAME.$NEXT_VER"
+fi
+
+# backup
+if [ "$NEXT_VER" -ne "1" ] ; then
+    BACKUP_CMD="$BACKUP_CMD 5< \"$BACKUP_NAME.$LAST_VER.md5\""
+fi
+BACKUP_CMD="$BACKUP_CMD 6> \"$BACKUP_NAME.$NEXT_VER.md5\" > \"$BACKUP_FILE\""
+if [ "$VERBOSE" ] ; then
+    echo "running: $BACKUP_CMD" >&2
+fi
+echo $BACKUP_CMD | sh
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne "0" ] ; then
+    rm -f "$BACKUP_FILE" "$BACKUP_NAME.$NEXT_VER.md5"
+    exit $?
+fi
+
+# increment version
+echo $NEXT_VER > "$BACKUP_NAME.ver"
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne "0" ] ; then
+    exit $EXIT_CODE
+fi
+
+echo "backup completed successfully" >&2
+exit 0

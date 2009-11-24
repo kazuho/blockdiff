@@ -1,0 +1,65 @@
+#! /usr/bin/perl
+
+use 5.008;
+use strict;
+use warnings;
+
+use Digest::MD5 qw(md5);
+
+# file descriptors:
+#   0 < data file
+#   1 > patch data
+#   5 < old digest (optional)
+#   6 > new digest
+
+my $blocksize = $ENV{BLOCKSIZE} || 16384;
+
+# open files
+open my $new_digest_fp, '>&=', 6
+    or die "cloud not open digest data output (fd:6):$!";
+my $orig_digest_fp;
+if (open $orig_digest_fp, '<&=', 5) {
+    sysread($orig_digest_fp, my $bsbin, 4) == 4
+        or die "old digest data is corrupt";
+    $blocksize = unpack 'V', $bsbin;
+} else {
+    undef $orig_digest_fp;
+}
+
+# write block size
+syswrite(STDOUT, pack('V', $blocksize)) == 4
+    or die "failed to write digest data (fd:1):$!";
+syswrite($new_digest_fp, pack('V', $blocksize)) == 4
+    or die "failed to write digest data (fd:6):$!";
+
+for (my $offset = 0;
+     (my $rlen = sysread(STDIN, my $block, $blocksize)) != 0;
+     $offset += $rlen) {
+    die "failed to read data:$!"
+        if $rlen == -1;
+    my $digest = md5($block, $rlen);
+    my $orig_digest;
+    if ($orig_digest_fp
+            && (sysread($orig_digest_fp, $orig_digest, length $digest)
+                    == length $digest)
+                && $digest == $orig_digest) {
+        # no need to dump data
+    } else {
+        # dump data
+        (syswrite(STDOUT, pack('V2', $offset & 0xffffffff, $offset >> 32)) == 8
+             and syswrite(STDOUT, $block) == $rlen)
+            or die "failed to write patch data (fd:1):$!";
+    }
+    # write digest
+    syswrite($new_digest_fp, $digest) == length $digest
+        or die "failed to write digest data (fd:6):$!";
+}
+
+close $orig_digest_fp
+    if $orig_digest_fp;
+close $new_digest_fp
+    or die "failed to close digest output (fd:6):$!";
+close STDOUT
+    or die "failed to close stdout:$!";
+
+exit 0;

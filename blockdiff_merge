@@ -44,7 +44,7 @@ while (readall(\*STDIN, \my $offbin, 8) == 8) {
         if $rlen <= 0;
     my $offset = do {
         my @o = unpack 'V2', $offbin;
-        $o[0] + $o[1] * (1<<32);
+        $o[0] + $o[1] * 2**32;
     };
     warn "writing at:$offset, size:$rlen" if $DEBUG;
     sysseek $fh, $offset, 0

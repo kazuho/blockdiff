@@ -42,7 +42,7 @@ for (my $offset = 0;
     if ($orig_digest_fp
             && (sysread($orig_digest_fp, $orig_digest, length $digest)
                     == length $digest)
-                && $digest == $orig_digest) {
+                && $digest eq $orig_digest) {
         # no need to dump data
     } else {
         # dump data

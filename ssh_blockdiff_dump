@@ -20,9 +20,6 @@ fi
 if [ ! "$TMPDIR" ] ; then
     TMPDIR="/tmp"
 fi
-if [ ! "$DUMP_CMD" ] ;then
-    DUMP_CMD="blockdiff_dump"
-fi
 EXIT_CODE=0
 
 # obtain remote TMPDIR
@@ -32,6 +29,21 @@ rm -f $TMPDIR/tmpdir.$$
 if [ ! "$REMOTE_TMPDIR" ] ; then
     REMOTE_TMPDIR="/tmp"
 fi
+
+# copy blockdiff_dump to remote
+DUMP_CMD=`dirname "$0"`
+if [ "$0" = `basename "$0"` ] ; then
+    DUMP_CMD=`which blockdiff_dump`
+else
+    DUMP_CMD=`dirname "$0"`"/blockdiff_dump"
+fi
+if [ ! -x "$DUMP_CMD" ] ; then
+    echo "could not find blockdiff_dump" >&2
+    exit 1
+fi
+ssh $SSH_ARGS "cat > \"$REMOTE_TMPDIR/blockdiff_dump.$$\"" < "$DUMP_CMD" || exit $?
+ssh $SSH_ARGS "chmod u+x \"$REMOTE_TMPDIR/blockdiff_dump.$$\"" || exit $?
+DUMP_CMD="$REMOTE_TMPDIR/blockdiff_dump.$$"
 
 # copy digest file to remote
 if [ -e "/dev/fd/5" ] ; then
@@ -66,7 +78,7 @@ if [ "$EXIT_CODE" -eq 0 ] ; then
 fi
 
 # remove temporary files
-ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/out_md5.$$"
+ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/out_md5.$$ $REMOTE_TMPDIR/blockdiff_dump.$$"
 if [ -e "/dev/fd/5" ] ; then
     ssh $SSH_ARGS "rm -f $REMOTE_TMPDIR/in_md5.$$"
 fi

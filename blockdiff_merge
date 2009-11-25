@@ -3,6 +3,25 @@
 use 5.008;
 use strict;
 use warnings;
+use Errno;
+
+sub readall {
+    my ($fh, $buf, $len) = @_;
+    my $off = 0;
+    while ($off != $len) {
+	my $r = sysread($fh, $$buf, $len - $off, $off);
+	if ($r == 0) {
+	    return $off;
+	} elsif ($r == -1) {
+	    if ($! != Errno::EAGAIN) {
+		return $off || -1;
+	    }
+	} else {
+	    $off += $r;
+	}
+    }
+    return $off;
+}
 
 my $DEBUG = $ENV{DEBUG} || undef;
 
@@ -13,22 +32,23 @@ open my $fh, '+>>', $fn
     or die "failed to open file:$fn:$!";
 
 my $blocksize = do {
-    read(STDIN, my $bsbin, 4) == 4
+    readall(\*STDIN, \my $bsbin, 4) == 4
         or die "invalid input";
     unpack'V', $bsbin;
 };
+warn "block size: $blocksize" if $DEBUG;
 
-while (sysread(STDIN, my $offbin, 8) == 8) {
-    my $rlen = sysread(STDIN, my $block, $blocksize);
+while (readall(\*STDIN, \my $offbin, 8) == 8) {
+    my $rlen = readall(\*STDIN, \my $block, $blocksize);
     die "unexpected eof while reading input:$!"
         if $rlen <= 0;
     my $offset = do {
         my @o = unpack 'V2', $offbin;
         $o[0] + $o[1] * (1<<32);
     };
-    warn "writing at:$offset" if $DEBUG;
+    warn "writing at:$offset, size:$rlen" if $DEBUG;
     sysseek $fh, $offset, 0
-        or die "seek failed:$!";
+        or die "seek failed to offset $offset:$!";
     syswrite($fh, $block, $rlen) == $rlen
         or die "write failed:$!";
 }

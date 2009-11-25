@@ -37,7 +37,7 @@ for (my $offset = 0;
      $offset += $rlen) {
     die "failed to read data:$!"
         if $rlen == -1;
-    my $digest = md5($block, $rlen);
+    my $digest = md5($block);
     my $orig_digest;
     if ($orig_digest_fp
             && (sysread($orig_digest_fp, $orig_digest, length $digest)

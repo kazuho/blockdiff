@@ -1,0 +1,39 @@
+#! /usr/bin/perl
+
+use 5.008;
+use strict;
+use warnings;
+
+my $DEBUG = $ENV{DEBUG} || undef;
+
+my $fn = shift @ARGV
+    or die "Usage: $0 <file>\n";
+
+open my $fh, '+>>', $fn
+    or die "failed to open file:$fn:$!";
+
+my $blocksize = do {
+    read(STDIN, my $bsbin, 4) == 4
+        or die "invalid input";
+    unpack'V', $bsbin;
+};
+
+while (sysread(STDIN, my $offbin, 8) == 8) {
+    my $rlen = sysread(STDIN, my $block, $blocksize);
+    die "unexpected eof while reading input:$!"
+        if $rlen <= 0;
+    my $offset = do {
+        my @o = unpack 'V2', $offbin;
+        $o[0] + $o[1] * (1<<32);
+    };
+    warn "writing at:$offset" if $DEBUG;
+    sysseek $fh, $offset, 0
+        or die "seek failed:$!";
+    syswrite($fh, $block, $rlen) == $rlen
+        or die "write failed:$!";
+}
+
+close $fh
+    or die "failed to close file:$fn:$!";
+
+exit 0;

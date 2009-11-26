@@ -82,3 +82,39 @@ close STDOUT
     or die "failed to close stdout:$!";
 
 exit 0;
+
+__END__
+
+=head1 NAME
+
+blockdiff_dump - block-based diff (with separate md5 file)
+
+=head1 SYNOPSIS
+
+    take full backup
+    % blockdiff_dump < file 6> backup_md5.1 > backup.1
+
+    take inrcemental backups
+    % blockdiff_dump < file 5< backup_md5.1 6> backup_md5.2 > backup.2
+    % blockdiff_dump < file 5< backup_md5.2 6> backup_md5.3 > backup.3
+    ...
+
+=head1 DESCRIPTION
+
+Blockdiff_dump is a low-level dump script for taking block-based diffs.
+
+=head1 SEE ALSO
+
+L<App::Blockdiff> - for general information
+
+=head1 AUTHOR
+
+Copyright (C) 2009 Cybozu Labs, Inc., written by Kazuho Oku
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=cut

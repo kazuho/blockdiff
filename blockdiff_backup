@@ -64,3 +64,37 @@ fi
 
 echo "backup completed successfully" >&2
 exit 0
+
+
+=head1 NAME
+
+blockdiff_backup - a wrapper script for taking multi-generational backups
+
+=head1 SYNOPSIS
+
+    take a lvm snapshot-based backup
+    % blockdiff_backup backup_name ssh_lvm_dump root@host /dev/pv/lv
+
+    backup a remote file
+    % blockdiff_backup backup_name ssh_blockdiff_dump root@host file
+
+
+=head1 DESCRIPTION
+
+Blockdiff_backup is a wrapper script, for taking multi-generational, incremental backups using L<ssh_lvm_dump> or L<ssh_blockdiff_dump>.
+
+=head1 SEE ALSO
+
+L<App::Blockdiff> - for general information
+
+=head1 AUTHOR
+
+Copyright (C) 2009 Cybozu Labs, Inc., written by Kazuho Oku
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=cut

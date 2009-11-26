@@ -31,7 +31,9 @@ App::Blockdiff - collection of scripts for block-based diff (incremental backups
 
 =head1 DESCRIPTION
 
-App::Blockdiff is a collection of script files for taking block-based diffs and merging them.  It is well suited for taking backups of disk images and database files.
+App::Blockdiff is a collection of script files for taking block-based diffs and merging them.
+It is well suited for taking periodical backups of disk images or database files.
+Previous backup data is not required when taking the next differential (incremental) backup.  Only the md5 file (which is substantially smaller than the full backup) should be kept to take the next incremental (differential) backup.
 
 =head1 SEE ALSO
 

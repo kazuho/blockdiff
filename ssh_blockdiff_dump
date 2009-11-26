@@ -84,3 +84,45 @@ if [ -e "/dev/fd/5" ] ; then
 fi
 
 exit $EXIT_CODE
+
+=head1 NAME
+
+ssh_blockdiff_dump - runs blockdiff_dump over ssh
+
+=head1 SYNOPSIS
+
+    take full backup
+    % ssh_blockdiff_dump user@host file 6> backup_md5.1 > backup.1
+
+    take inrcemental backups
+    % ssh_blockdiff_dump user@host file 5< backup_md5.1 6> backup_md5.2 \
+      > backup.2
+    % ssh_blockdiff_dump user@host file 5< backup_md5.2 6> backup_md5.3 \
+      > backup.3
+    ...
+
+=head1 DESCRIPTION
+
+Ssh_blockdiff_dump is a wrapper script that runs L<blockdiff_dump> over ssh.  There is no need to install L<blockdiff_dump> on the remote machine, necessary files will be transferred by ssh_blockdiff_dump.
+
+=head1 OPTIONS
+
+=head2 -z
+
+compress output using L<gzip>
+
+=head1 SEE ALSO
+
+L<App::Blockdiff> - for general information
+
+=head1 AUTHOR
+
+Copyright (C) 2009 Cybozu Labs, Inc., written by Kazuho Oku
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=cut

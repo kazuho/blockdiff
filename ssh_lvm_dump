@@ -55,3 +55,45 @@ if [ "$EXIT_CODE" -eq 0 ] ; then
 fi
 
 exit $EXIT_CODE
+
+=head1 NAME
+
+ssh_lvm_dump - dumps a logical volume using LVM snapshot
+
+=head1 SYNOPSIS
+
+    take full backup
+    % ssh_lvm_dump user@host /dev/pv/lv 6> backup_md5.1 > backup.1
+
+    take inrcemental backups
+    % ssh_lvm_dump user@host /dev/pv/lv 5< backup_md5.1 6> backup_md5.2 \
+      > backup.2
+    % ssh_lvm_dump user@host /dev/pv/lv 5< backup_md5.2 6> backup_md5.3 \
+      > backup.3
+    ...
+
+=head1 DESCRIPTION
+
+Ssh_lvm_dump is a wrapper script that uses L<ssh_blockdiff_dump> to take backups of LVM logical volumes (using snapshots) of a remote machine.
+
+=head1 OPTIONS
+
+=head2 -z
+
+compress output using L<gzip>
+
+=head1 SEE ALSO
+
+L<App::Blockdiff> - for general information
+
+=head1 AUTHOR
+
+Copyright (C) 2009 Cybozu Labs, Inc., written by Kazuho Oku
+
+=head1 LICENSE
+
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=cut

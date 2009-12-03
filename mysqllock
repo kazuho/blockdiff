@@ -1,0 +1,77 @@
+#! /usr/bin/perl
+
+use 5.008;
+use strict;
+use warnings;
+
+use DBI;
+use Getopt::Long;
+use POSIX qw(WIFEXITED WEXITSTATUS);
+
+sub usage {
+    my $exit_code = shift;
+    printf <<"EOT";
+Usage: $0 [options] cmd
+Options: --user=db_user    username (default: current user)
+         --password=pass   password (default: none)
+         --host=db_host    db host (default: 127.0.0.1)
+         --port=db_port    db port (default: 3306)
+         --db=db_name      database name (default: "mysql")
+         --before=stmt     statement to execute before running the command
+                           (default: "FLUSH TABLES WITH READ LOCK")
+         --after=stmt      statement to execute after running the command
+                           (default: "UNLOCK TABLES")
+EOT
+    exit $exit_code;
+}
+
+my $user = $ENV{USER} || 'root';
+my $password = '';
+my $host = 'localhost';
+my $port = 3306;
+my $db = 'mysql';
+my $before = 'FLUSH TABLES WITH READ LOCK';
+my $after  = 'UNLOCK TABLES';
+my $help;
+
+GetOptions(
+    'user=s'     => \$user,
+    'password=s' => \$password,
+    'host=s'     => \$host,
+    'port=i'     => \$port,
+    'db=s'       => \$db,
+    'before'     => \$before,
+    'after'      => \$after,
+    help         => \$help,
+) or exit 1;
+
+usage(0)
+    if $help;
+die "no command (see --help)\n"
+    if @ARGV == 0;
+
+# connect (with no auto-reconnect)
+my $dsn = "DBI:mysql:db_name=$db;host=$host;port=$port";
+my $dbh = DBI->connect($dsn, $user, $password)
+    or die $DBI::errstr;
+$dbh->{mysql_auto_reconnect} = 0;
+
+# prepare
+$dbh->do($before)
+    or die $dbh->errstr;
+
+# run given command as child process
+unless (my $pid = fork) {
+    die "fork failed:$!"
+        unless defined $pid;
+    exec @ARGV;
+    die "failed to execute given command:$!";
+}
+while (! wait) {}
+my $code = $?;
+
+# cleanup
+$dbh->do($after)
+    or die $dbh->errstr;
+
+exit(WIFEXITED($code) ? WEXITSTATUS($code) : 255);

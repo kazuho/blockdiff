@@ -35,6 +35,7 @@ EXIT_CODE=0
 # create snapshot
 if [ "$EXIT_CODE" -eq 0 ] ; then
     echo "creating snapshot..." >&2
+    ssh $SSH_ARGS "sync; sync"
     $LVCREATE_PREFIX ssh $SSH_ARGS "sync && lvcreate --snapshot -L \"$SNAPSHOT_SIZE\" -n \"$SS_NAME\" \"$LV_PATH\"" >&2
     EXIT_CODE=$?
 fi

@@ -1,8 +1,11 @@
 #! /bin/sh
 
 # check args
-if [ "$1" = "-z" ] ; then
-    USE_GZIP=1
+if [ "$1" = "-z" -o "$1" = "--gzip" ] ; then
+    COMPRESS_PROG=gzip
+    shift
+elif [ "$1" = "--lzop" ] ; then
+    COMPRESS_PROG=lzop
     shift
 fi
 SSH_ARGS="$1"
@@ -62,8 +65,8 @@ fi
 if [ "$BLOCKSIZE" ] ; then
     CMD="BLOCKSIZE=$BLOCKSIZE $CMD"
 fi
-if [ "$USE_GZIP" ] ; then
-    CMD="$CMD | gzip ; exit \`test \"\${PIPESTATUS[0]}\" -eq 0 -a \"\$?\" -eq 0\`"
+if [ "$COMPRESS_PROG" ] ; then
+    CMD="$CMD | $COMPRESS_PROG ; exit \`test \"\${PIPESTATUS[0]}\" -eq 0 -a \"\$?\" -eq 0\`"
 fi
 if [ "$VERBOSE" ] ; then
     echo "issuing $CMD" >&2

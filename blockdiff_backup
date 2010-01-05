@@ -10,11 +10,14 @@ if [ "$#" -eq "0" ] ; then
     exit 1
 fi
 BACKUP_CMD="\"$1\""
+FILE_EXT=
 shift
 while [ "$#" -ne "0" ] ; do
-    if [ "$1" = "-z" ] ; then
-	# nasty way to detect gzip usage
-	USE_GZIP=1
+    # nasty way to detect gzip usage
+    if [ "$1" = "-z" -o "$1" = "--gzip" ] ; then
+	FILE_EXT=.gz
+    elif [ "$1" = "--lzop" ] ; then
+        FILE_EXT=.lzop
     fi
     BACKUP_CMD="$BACKUP_CMD \"$1\""
     shift
@@ -34,11 +37,7 @@ if [ -e "$BACKUP_NAME.ver" ] ; then
 	exit $EXIT_CODE
     fi
 fi
-if [ "$USE_GZIP" ] ; then
-    BACKUP_FILE="$BACKUP_NAME.$NEXT_VER.gz"
-else
-    BACKUP_FILE="$BACKUP_NAME.$NEXT_VER"
-fi
+BACKUP_FILE="$BACKUP_NAME.$NEXT_VER$FILE_EXT"
 
 # backup
 if [ "$NEXT_VER" -ne "1" ] ; then

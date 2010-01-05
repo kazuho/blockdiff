@@ -6,8 +6,8 @@ if [ ! "$BLOCKSIZE" ] ; then
 fi
 
 # check args
-if [ "$1" = "-z" ] ; then
-    SSH_BLOCKDIFF_ARGS="-z"
+if [ "$1" = "-z" -o "$1" = "--gzip" -o "$1" = "--lzop" ] ; then
+    SSH_BLOCKDIFF_ARGS=$1
     shift
 fi
 SSH_ARGS="$1"
@@ -82,6 +82,10 @@ Ssh_lvm_dump is a wrapper script that uses L<ssh_blockdiff_dump> to take backups
 =head2 -z
 
 compress output using L<gzip>
+
+=head2 --lzop
+
+compress output using L<lzop>
 
 =head1 SEE ALSO
 

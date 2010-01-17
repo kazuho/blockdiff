@@ -8,7 +8,7 @@ use Digest::MD5 qw(md5);
 use Errno;
 
 # file descriptors:
-#   0 < data file
+#   0 < data file (or uses $ARGV[0] if exists)
 #   1 > patch data
 #   5 < old digest (optional)
 #   6 > new digest
@@ -32,6 +32,11 @@ sub readall {
 }
 
 my $blocksize = $ENV{BLOCKSIZE} || 16384;
+
+if (@ARGV == 1) {
+    open STDIN, '<', $ARGV[0]
+	or die "failed to open:$ARGV[0]:$!";
+}
 
 # open files
 open my $new_digest_fp, '>&=', 6

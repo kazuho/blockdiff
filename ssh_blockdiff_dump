@@ -48,6 +48,11 @@ ssh $SSH_ARGS "cat > \"$REMOTE_TMPDIR/blockdiff_dump.$$\"" < "$DUMP_CMD" || exit
 ssh $SSH_ARGS "chmod u+x \"$REMOTE_TMPDIR/blockdiff_dump.$$\"" || exit $?
 DUMP_CMD="$REMOTE_TMPDIR/blockdiff_dump.$$"
 
+# set prefix
+if [ "$SSH_BLOCKDIFF_PREFIX" != "" ] ; then
+    DUMP_CMD="$SSH_BLOCKDIFF_PREFIX $DUMP_CMD"
+fi
+
 # copy digest file to remote
 if [ -e "/dev/fd/5" ] ; then
     CMD="cat > $REMOTE_TMPDIR/in_md5.$$"

@@ -45,6 +45,9 @@ if [ "$EXIT_CODE" -eq 0 ] ; then
     echo "running: $SSH_BLOCKDIFF_DUMP \"$SSH_ARGS\" \"$SS_PATH\"..." >&2
     $SSH_BLOCKDIFF_DUMP "$SSH_ARGS" "$SS_PATH"
     EXIT_CODE=$?
+    if [ "$EXIT_CODE" -ne 0 ] ; then
+	echo "  error: $SSH_BLOCKDIFF_DUMP exitted with code:$EXIT_CODE" >&2
+    fi
 fi
 
 # remove snapshot

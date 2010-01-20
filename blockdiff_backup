@@ -51,7 +51,7 @@ echo $BACKUP_CMD | sh
 EXIT_CODE=$?
 if [ "$EXIT_CODE" -ne "0" ] ; then
     rm -f "$BACKUP_FILE" "$BACKUP_NAME.$NEXT_VER.md5"
-    exit $?
+    exit $EXIT_CODE
 fi
 
 # increment version

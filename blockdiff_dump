@@ -6,6 +6,11 @@ use warnings;
 
 use Digest::MD5 qw(md5);
 use Errno;
+use Getopt::Long;
+use Pod::Usage;
+use POSIX qw(:sys_wait_h);
+
+our $VERSION = '0.02';
 
 # file descriptors:
 #   0 < data file (or uses $ARGV[0] if exists)
@@ -32,10 +37,43 @@ sub readall {
 }
 
 my $blocksize = $ENV{BLOCKSIZE} || 16384;
-
+my @compress_cmd;
+my ($opt_help, $opt_version);
+GetOptions(
+    'blocksize=i' => \$blocksize,
+    'z|gzip'      => sub { @compress_cmd = qw(gzip -f) },
+    'lzop'        => sub { @compress_cmd = qw(lzop -f) },
+    'help'        => \$opt_help,
+    'version'     => \$opt_version,
+) or pod2usage(1);
+if ($opt_help) {
+    pod2usage(0);
+} elsif ($opt_version) {
+    print "$VERSION\n";
+    exit 0;
+}
 if (@ARGV == 1) {
     open STDIN, '<', $ARGV[0]
 	or die "failed to open:$ARGV[0]:$!";
+}
+my $compress_pid;
+if (@compress_cmd) {
+    pipe my $rfh, my $wfh,
+        or die "failed to create pipe(2):$!";
+    unless ($compress_pid = fork) {
+        die "fork(2) failed:$!"
+            unless defined $compress_pid;
+        # child process
+        close $wfh;
+        open STDIN, '<&', $rfh
+            or die "dup(2) failed:$!";
+        exec @compress_cmd;
+        die "failed to exec(2):", join(' ', @compress_cmd), ":$!";
+    }
+    close $rfh;
+    open STDOUT, '>&', $wfh
+        or die "dup2 failed:$!";
+    close $wfh;
 }
 
 # open files
@@ -86,6 +124,12 @@ close $new_digest_fp
 close STDOUT
     or die "failed to close stdout:$!";
 
+if ($compress_pid) {
+    while (wait != $compress_pid) {}
+    my $status = $?;
+    exit 1
+        unless WIFEXITED($status) && WEXITSTATUS($status) == 0;
+}
 exit 0;
 
 __END__
@@ -96,13 +140,29 @@ blockdiff_dump - block-based diff (with separate md5 file)
 
 =head1 SYNOPSIS
 
-    take full backup
-    % blockdiff_dump < file 6> backup_md5.1 > backup.1
+  # take full backup
+  blockdiff_dump [opts] < file 6> backup_md5.1 > backup.1
 
-    take inrcemental backups
-    % blockdiff_dump < file 5< backup_md5.1 6> backup_md5.2 > backup.2
-    % blockdiff_dump < file 5< backup_md5.2 6> backup_md5.3 > backup.3
-    ...
+  # take inrcemental backups
+  blockdiff_dump [opts] < file 5< backup_md5.1 6> backup_md5.2 > backup.2
+  blockdiff_dump [opts] < file 5< backup_md5.2 6> backup_md5.3 > backup.3
+  ...
+
+=over 4
+
+=item --blocksize=bytes
+
+block size used (default: 16384)
+
+=item -z, --gzip
+
+use gzip for compression (requires gzip to be installed)
+
+=item --lzop
+
+use lzop for compression (requires lzop to be installed)
+
+=back
 
 =head1 DESCRIPTION
 

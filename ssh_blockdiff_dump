@@ -1,17 +1,14 @@
 #! /bin/sh
 
 # check args
-if [ "$1" = "-z" -o "$1" = "--gzip" ] ; then
-    COMPRESS_PROG=gzip
-    shift
-elif [ "$1" = "--lzop" ] ; then
-    COMPRESS_PROG=lzop
+if [ "$1" = "-z" -o "$1" = "--gzip" -o "$1" = "--lzop" ] ; then
+    COMPRESS_OPT=$1
     shift
 fi
 SSH_ARGS="$1"
 REMOTE_FILE="$2"
 if [ ! "$REMOTE_FILE" ] ; then
-    echo "Usage: $0 [-z] user@host remote_file [5< prev_digest_file] 6> digest_file > backup_file" >&2
+    echo "Usage: $0 [-z|--lzop] user@host remote_file [5< prev_digest_file] 6> digest_file > backup_file" >&2
     exit 1
 fi
 if [ ! -e "/dev/fd/6" ] ; then
@@ -63,15 +60,15 @@ if [ -e "/dev/fd/5" ] ; then
 fi
 
 # build and execute blockdiff_dump
-CMD="$DUMP_CMD < \"$REMOTE_FILE\" 6> $REMOTE_TMPDIR/out_md5.$$"
+CMD="exec $DUMP_CMD < \"$REMOTE_FILE\" 6> $REMOTE_TMPDIR/out_md5.$$"
 if [ -e "/dev/fd/5" ] ; then
     CMD="$CMD 5< $REMOTE_TMPDIR/in_md5.$$"
 fi
 if [ "$BLOCKSIZE" ] ; then
     CMD="BLOCKSIZE=$BLOCKSIZE $CMD"
 fi
-if [ "$COMPRESS_PROG" ] ; then
-    CMD="$CMD | $COMPRESS_PROG ; exit \`test \"\${PIPESTATUS[0]}\" -eq 0 -a \"\$?\" -eq 0\`"
+if [ "$COMPRESS_OPT" ] ; then
+    CMD="$CMD $COMPRESS_OPT"
 fi
 if [ "$VERBOSE" ] ; then
     echo "issuing $CMD" >&2
